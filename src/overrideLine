@@ -1,0 +1,11 @@
+#!/bin/bash
+
+echo long text
+echo long text
+sleep 1
+printf "\033[1A"
+printf "\033[K"
+printf "\033[1A"
+printf "\033[K"
+echo foo
+echo foo
