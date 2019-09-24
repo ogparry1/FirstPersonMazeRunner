@@ -1,93 +1,123 @@
-#include <iostream>
-#include <cstdlib> // system
-#include <string> // string
-#include <thread> // thread
 #include <chrono> // thread
 #include <cmath> // sin, cos
+#include <cstdlib> // system
+#include <iostream>
+#include <string> // string
+#include <thread> // thread
 
-#include "../include/MazeRunner.hpp"
+//#include "../include/MazeRunner.hpp"
 
 #define PI 3.14159265
 
-using namespace Maze;
+const std::string LINE_DEL = "\033[1A\033[K";
+
+std::string map[10] = 
+{
+    "##########",
+    "#........E",
+    "#........#",
+    "#........#",
+    "#........#",
+    "#....S...#",
+    "#........#",
+    "#........#",
+    "#........#",
+    "##########"
+};
+
+struct Position
+{
+    double x = 1.0;
+    double y = 1.0;
+    Position(const Position &pos)
+    {
+	x = pos.x;
+	y = pos.y;
+    }
+    Position()
+    {
+	x = 1.0;
+	y = 1.0;
+    }
+};
+
+char getObject(const Position &pos)
+{
+    return map[(int)pos.x][(int)pos.y];
+}
+
+int rayTrace(int *dists, const int &numrays, const Position &pos, const int &dir, const double &fov)
+{
+    int max = 0;
+    double angle = dir-(fov/2);
+    double increment = fov/numrays;
+    for (int ii = 0; ii < numrays; ii++)
+    {
+	Position ray(pos);
+	while (getObject(ray) != '#' && getObject(ray) != 'E')
+	{
+	    ray.x += 0.1*cos(angle*PI/180);
+	    ray.y += 0.1*sin(angle*PI/180);
+	    dists[ii]++;
+	    if (max < dists[ii]) 
+		max = dists[ii];
+	}
+	angle += increment;
+    }
+    return max;
+}
+
+char getASCII(int steps, int max)
+{
+    double ratio = (double)steps/(double)max;
+    if (ratio < .50)
+    {
+	return '.';
+	//return '\xB0';
+    }
+    else if (ratio < .75)
+    {
+	return '*';
+	//return '\xB1';
+    }
+    else
+    {
+	return '#';
+	//return '\xB2';
+    }
+}
 
 int main(int argc, char **argv)
 {
-    int width = std::atoi(argv[1]), 
-	height = std::atoi(argv[2]), 
-	degFOV = std::atoi(argv[3]),
-	dir = 0;
-    int rays[width] = {0};
-    int S[] = {0,0},
-	E[] = {0,0};
-    double P[] = {0,0};
-
-    std::string map[10] = 
+    // Get the parameter settings
+    int height = std::atoi(argv[1]), 
+	width = std::atoi(argv[2]), 
+	fov = std::atoi(argv[3]),
+	dir = 45;
+    Position playerPos;
+    for (int ii = 0 ; ii < 10; ii++)
     {
-	"##########",
-	"########.E",
-	"#........#",
-	"######...#",
-	"#........#",
-	"#........#",
-	"#....#...#",
-	"#..S.#...#",
-	"#....#...#",
-	"##########"
-    };
-
-    for (int ii = 0; ii < 10; ii++)
-    {
-	for (int jj = 0; jj < 10; jj++)
+	std::size_t jj = map[ii].find("S");
+	if (jj != std::string::npos)
 	{
-	    if (map[ii][jj] == 'S')
-	    {
-		S[0] = ii;
-		S[1] = jj;
-	    }
-	    else if (map[ii][jj] == 'E')
-	    {
-		E[0] = ii;
-		E[1] = jj;
-	    }
-	    else if (map[ii][jj] == 'P')
-	    {
-		P[0] = ii+0.5;
-		P[1] = jj+0.5;
-	    }
-	    else {}
+	    playerPos.x = (double)ii;
+	    playerPos.y = (double)jj;
 	}
+	std::cout << map[ii] << std::endl;
+    }
+    std::cout << "Player Position = { " << playerPos.x << ", " << playerPos.y << " }" << std::endl;
+
+    // Ray Trace
+    int *distances = new int[width];
+    int maxDist = rayTrace(distances, width, playerPos, dir, fov);
+    for (int ii = 0 ; ii < height; ii++)
+    {
+	for (int jj = 0 ; jj < width; jj++)
+	{
+	    std::cout << getASCII(distances[jj], maxDist);
+	}
+	std::cout << std::endl;
     }
 
-    const double raystep = 0.5;
-    while (true)
-    {
-	int deg = dir-degFOV/2;
-	double raypos[2];
-	int max = 0;
-
-	// Ray Trace
-	for (int ii = 0; ii < width; ii++)
-	{
-	    raypos[0] = P[0];
-	    raypos[1] = P[1];
-	    rays[ii] = 0;
-	    while (map[(int)raypos[0]][(int)raypos[1]] != '#')
-	    {
-		raypos[0] += raystep*std::cos(deg*PI/180);
-		raypos[1] += raystep*std::sin(deg*PI/180);
-		rays[ii] += 1;
-	    }
-	    if (max < rays[ii]) max = rays[ii];
-	    deg += degFOV/width;
-	}
-
-	// Print to Screen
-	for (int ii = 0; ii < width; ii++)
-	{
-	}
-
-	// Check for user input and adjust
-    }
     return 0;
 }

@@ -11,7 +11,7 @@ CFLAGS= -c -g
 LDFLAGS=-pthread
 
 all: $(BINS)
-	echo $(SRC_FILES)
+	g++ --std=c++11 -g -o MazeEscape src/MazeEscape.cpp
 
 $(BINS): $(OBJ_FILES)
 	$(CXX) $(LDFLAGS) -o $@ $^
