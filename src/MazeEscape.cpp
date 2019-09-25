@@ -10,16 +10,17 @@
 #define PI 3.14159265
 
 const std::string LINE_DEL = "\033[1A\033[K";
+const int MAX_STEPS = (int)sqrt(2*pow(8,2))*10;
 
 std::string map[10] = 
 {
     "##########",
     "#........E",
+    "#....#...#",
+    "#...#....#",
+    "#...#....#",
     "#........#",
-    "#........#",
-    "#........#",
-    "#....S...#",
-    "#........#",
+    "#.....S..#",
     "#........#",
     "#........#",
     "##########"
@@ -67,33 +68,63 @@ int rayTrace(int *dists, const int &numrays, const Position &pos, const int &dir
     return max;
 }
 
-char getASCII(int steps, int max)
+void renderScreen(int width, int height, int *steps)
 {
-    double ratio = (double)steps/(double)max;
-    if (ratio < .50)
+    std::string screen[height]{""};
+
+    for (int ii = 0; ii < height; ii++)
     {
-	return '.';
-	//return '\xB0';
+	for (int jj = 0; jj < width; jj++)
+	{
+	    double ratio = (double)steps[width-jj-1]/(double)MAX_STEPS;
+	    std::string str_char = " ";
+	    if (ratio > .66)
+	    {
+		str_char = "\u2591";
+	    }
+	    else if (ratio > .33)
+	    {
+		str_char = "\u2592";
+	    }
+	    else
+	    {
+		str_char = "\u2593";
+	    }
+
+	    int wallHeight = (int)(((double)MAX_STEPS-(double)steps[width-jj-1])*((double)height/(double)MAX_STEPS));
+	    int bottom = (height-wallHeight)/2;
+	    int top = height - bottom;
+	    if (ii >= bottom && ii <= top)
+	    {
+		screen[ii] += str_char;
+	    }
+	    else if (ii < bottom)
+	    {
+		screen[ii] += " ";
+	    }
+	    else
+	    {
+		screen[ii] += "~";
+	    }
+	}
     }
-    else if (ratio < .75)
+
+
+    for (int ii = 0; ii < height; ii++)
     {
-	return '*';
-	//return '\xB1';
-    }
-    else
-    {
-	return '#';
-	//return '\xB2';
+	std::cout << screen[ii] << std::endl;
     }
 }
 
 int main(int argc, char **argv)
 {
+
     // Get the parameter settings
     int height = std::atoi(argv[1]), 
 	width = std::atoi(argv[2]), 
 	fov = std::atoi(argv[3]),
-	dir = 45;
+	dir = std::atoi(argv[4]);
+
     Position playerPos;
     for (int ii = 0 ; ii < 10; ii++)
     {
@@ -109,15 +140,10 @@ int main(int argc, char **argv)
 
     // Ray Trace
     int *distances = new int[width];
-    int maxDist = rayTrace(distances, width, playerPos, dir, fov);
-    for (int ii = 0 ; ii < height; ii++)
-    {
-	for (int jj = 0 ; jj < width; jj++)
-	{
-	    std::cout << getASCII(distances[jj], maxDist);
-	}
-	std::cout << std::endl;
-    }
+    rayTrace(distances, width, playerPos, dir, fov);
+
+    std::cout << "\u2591\u2592\u2593\tMax: " << MAX_STEPS << std::endl;
+    renderScreen(width, height, distances);
 
     return 0;
 }
