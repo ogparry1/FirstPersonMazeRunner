@@ -8,16 +8,10 @@ INC_FILES=$(foreach dir, $(INC_DIR), $(wildcard $(dir)/*.hpp))
 
 CXX=g++
 CFLAGS= -c -g
-LDFLAGS=-pthread
+LDFLAGS= -pthread
 
 all: $(BINS)
-	g++ --std=c++11 -g -o MazeEscape src/MazeEscape.cpp
-
-$(BINS): $(OBJ_FILES)
-	$(CXX) $(LDFLAGS) -o $@ $^
-
-$(OBJ_FILES): $(SRC_FILES) $(INC_FILES) 
-	$(CXX) $(CFLAGS) -o $@ $(SRC_FILES)
+	g++ --std=c++11 -g -o MazeEscape src/MazeEscape.cpp -lncurses
 
 .PHONY: clean
 

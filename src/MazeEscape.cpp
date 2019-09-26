@@ -2,8 +2,10 @@
 #include <cmath> // sin, cos
 #include <cstdlib> // system
 #include <iostream>
+#include <ncurses.h>
 #include <string> // string
 #include <thread> // thread
+#include <unistd.h> 
 
 //#include "../include/MazeRunner.hpp"
 
@@ -15,13 +17,13 @@ const int MAX_STEPS = (int)sqrt(2*pow(8,2))*10;
 std::string map[10] = 
 {
     "##########",
-    "#........E",
+    "#........X",
+    "#........#",
+    "#........#",
+    "#....P...#",
+    "#........#",
+    "#.....#..#",
     "#....#...#",
-    "#...#....#",
-    "#...#....#",
-    "#........#",
-    "#.....S..#",
-    "#........#",
     "#........#",
     "##########"
 };
@@ -55,7 +57,8 @@ int rayTrace(int *dists, const int &numrays, const Position &pos, const int &dir
     for (int ii = 0; ii < numrays; ii++)
     {
 	Position ray(pos);
-	while (getObject(ray) != '#' && getObject(ray) != 'E')
+	dists[ii] = 0;
+	while (getObject(ray) != '#' && getObject(ray) != 'X')
 	{
 	    ray.x += 0.1*cos(angle*PI/180);
 	    ray.y += 0.1*sin(angle*PI/180);
@@ -71,6 +74,11 @@ int rayTrace(int *dists, const int &numrays, const Position &pos, const int &dir
 void renderScreen(int width, int height, int *steps)
 {
     std::string screen[height]{""};
+
+    for (int ii = 0; ii < height; ii++)
+    {
+	std::cout << LINE_DEL;
+    }
 
     for (int ii = 0; ii < height; ii++)
     {
@@ -100,7 +108,7 @@ void renderScreen(int width, int height, int *steps)
 	    }
 	    else if (ii < bottom)
 	    {
-		screen[ii] += " ";
+		screen[ii] += "`";
 	    }
 	    else
 	    {
@@ -123,12 +131,12 @@ int main(int argc, char **argv)
     int height = std::atoi(argv[1]), 
 	width = std::atoi(argv[2]), 
 	fov = std::atoi(argv[3]),
-	dir = std::atoi(argv[4]);
+	dir = 0;
 
     Position playerPos;
     for (int ii = 0 ; ii < 10; ii++)
     {
-	std::size_t jj = map[ii].find("S");
+	std::size_t jj = map[ii].find("P");
 	if (jj != std::string::npos)
 	{
 	    playerPos.x = (double)ii;
@@ -136,14 +144,21 @@ int main(int argc, char **argv)
 	}
 	std::cout << map[ii] << std::endl;
     }
-    std::cout << "Player Position = { " << playerPos.x << ", " << playerPos.y << " }" << std::endl;
 
-    // Ray Trace
+    //std::cout << "\u2591\u2592\u2593\tMax: " << MAX_STEPS << std::endl;
+    for (int ii = 0 ; ii < height; ii++)
+	std::cout << std::endl;
+
+    // Initialize screen
     int *distances = new int[width];
-    rayTrace(distances, width, playerPos, dir, fov);
-
-    std::cout << "\u2591\u2592\u2593\tMax: " << MAX_STEPS << std::endl;
-    renderScreen(width, height, distances);
+    while (true)
+    {
+	// Ray Trace
+	rayTrace(distances, width, playerPos, dir, fov);
+	renderScreen(width, height, distances);
+	dir = (dir+1)%360;
+	std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    }
 
     return 0;
 }
