@@ -20,10 +20,10 @@ std::string map[10] =
     "#........X",
     "#........#",
     "#........#",
-    "#....P...#",
+    "#.P.##...#",
     "#........#",
-    "#.....#..#",
-    "#....#...#",
+    "#........#",
+    "#........#",
     "#........#",
     "##########"
 };
@@ -37,6 +37,11 @@ struct Position
 	x = pos.x;
 	y = pos.y;
     }
+    Position(double _x, double _y)
+    {
+	x = _x;
+	y = _y;
+    }
     Position()
     {
 	x = 1.0;
@@ -49,7 +54,7 @@ char getObject(const Position &pos)
     return map[(int)pos.x][(int)pos.y];
 }
 
-int rayTrace(int *dists, const int &numrays, const Position &pos, const int &dir, const double &fov)
+int rayTrace(int *dists, const int &numrays, const Position &pos, const double &dir, const double &fov)
 {
     int max = 0;
     double angle = dir-(fov/2);
@@ -86,11 +91,15 @@ void renderScreen(int width, int height, int *steps)
 	{
 	    double ratio = (double)steps[width-jj-1]/(double)MAX_STEPS;
 	    std::string str_char = " ";
-	    if (ratio > .66)
+	    if (ratio > .9)
+	    {
+		str_char = " ";
+	    }
+	    else if (ratio > .6)
 	    {
 		str_char = "\u2591";
 	    }
-	    else if (ratio > .33)
+	    else if (ratio > .3)
 	    {
 		str_char = "\u2592";
 	    }
@@ -124,14 +133,22 @@ void renderScreen(int width, int height, int *steps)
     }
 }
 
+void walkInCircle(Position &player, const Position &center, double &dir, double radius, double speed)
+{
+    dir = std::fmod((dir+speed),360);
+    double orth = std::fmod((dir+90),360);
+    player.x = center.x - radius*cos(orth*PI/180);
+    player.y = center.y - radius*sin(orth*PI/180);
+}
+
 int main(int argc, char **argv)
 {
 
     // Get the parameter settings
     int height = std::atoi(argv[1]), 
-	width = std::atoi(argv[2]), 
-	fov = std::atoi(argv[3]),
-	dir = 0;
+	width = std::atoi(argv[2]); 
+    double fov = std::atof(argv[3]),
+	   dir = 0;
 
     Position playerPos;
     for (int ii = 0 ; ii < 10; ii++)
@@ -151,12 +168,13 @@ int main(int argc, char **argv)
 
     // Initialize screen
     int *distances = new int[width];
+    Position center(5,5);
     while (true)
     {
 	// Ray Trace
+	walkInCircle(playerPos, center, dir, 2.0, 1.0);
 	rayTrace(distances, width, playerPos, dir, fov);
 	renderScreen(width, height, distances);
-	dir = (dir+1)%360;
 	std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
